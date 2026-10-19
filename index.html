@@ -37,6 +37,17 @@
     font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--graphite); text-decoration: none; }
   .studio span { color: var(--red); }
   .studio:hover { text-decoration: underline; }
+  /* the camera's buttons: turn the building, come closer, go further */
+  #controls { position: fixed; z-index: 3; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom));
+    display: flex; gap: 8px; opacity: 0; transition: opacity .6s ease .4s; }
+  #controls.on { opacity: 1; }
+  #controls button { width: 46px; height: 46px; border-radius: 50%; border: none; background: rgba(251, 248, 241, .9); color: #33333b;
+    box-shadow: 0 2px 10px rgba(43, 43, 46, .18), inset 0 0 0 1.5px rgba(51, 51, 59, .12); font: 600 20px/1 ui-rounded, system-ui, sans-serif;
+    display: grid; place-items: center; cursor: pointer; touch-action: manipulation; }
+  #controls button:active { transform: scale(.94); }
+  #controls button:focus-visible { outline: 2px solid #4f7f99; outline-offset: 2px; }
+  #controls svg { width: 22px; height: 22px; }
+  @media (hover: hover) and (pointer: fine) { #controls .zoom { display: none; } }
   /* `?hud`: what each frame costs, in the corner */
   #hud { display: none; position: fixed; top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); z-index: 3;
     font: 600 11px ui-monospace, monospace; color: #fbf8f1; background: rgba(43, 43, 46, .72); padding: 5px 8px; border-radius: 6px; pointer-events: none; }
@@ -47,6 +58,12 @@
 <body>
 <canvas id="lelelilo" tabindex="0" aria-label="Lelelilo HQ"></canvas>
 <div id="hud" aria-hidden="true"></div>
+<nav id="controls" aria-label="Camera">
+  <button data-ui="turn-left" aria-label="Turn the office left" title="Turn left (Q)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4.5h4.5"/></svg></button>
+  <button data-ui="turn-right" aria-label="Turn the office right" title="Turn right (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v4.5h-4.5"/></svg></button>
+  <button class="zoom" data-ui="zoom-out" aria-label="Further away">−</button>
+  <button class="zoom" data-ui="zoom-in" aria-label="Closer">+</button>
+</nav>
 
 <div class="screen" id="loading" role="status" aria-live="polite">
   <img class="title" src="favicon.svg" alt="">
@@ -79,13 +96,16 @@
 
 <script type="module">
   // `cargo xtask web` writes the build's id here, so a browser fetches the new game after each build
-  const BUILD = 'f4e54cf';
+  const BUILD = '5c0c3a5';
   window.__lelelilo_build = BUILD;
   const $ = id => document.getElementById(id);
   const show = id => { for (const s of ['loading', 'unsupported', 'failed']) $(s).classList.toggle('hidden', s !== id); };
   const setProgress = k => { $('bar').style.width = `${Math.max(0, Math.min(1, k)) * 100}%`; };
   const fail = e => { console.error(e); $('errtext').textContent = String(e && e.message || e); show('failed'); };
   $('again').addEventListener('click', e => { e.preventDefault(); location.reload(); });
+  // the camera's buttons tell the game what they want
+  for (const b of document.querySelectorAll('#controls button'))
+    b.addEventListener('click', () => dispatchEvent(new CustomEvent('hq-ui', { detail: b.dataset.ui })));
   const LINUX = /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
   // On Linux, browsers keep WebGPU switched off for now: say how to switch it on
   const linuxHelp = () => `<b>On Linux</b>, WebGPU is still switched off by default. In Chrome, Chromium, Brave or Edge:
@@ -125,6 +145,7 @@
       addEventListener('lelelilo-error', e => fail(e.detail));
       addEventListener('lelelilo-ready', () => {
         setProgress(1); $('status').textContent = 'Ready';
+        $('controls').classList.add('on');
         setTimeout(() => $('loading').classList.add('gone'), 200);
         $('lelelilo').focus();
       }, { once: true });
