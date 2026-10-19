@@ -37,11 +37,16 @@
     font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--graphite); text-decoration: none; }
   .studio span { color: var(--red); }
   .studio:hover { text-decoration: underline; }
+  /* `?hud`: what each frame costs, in the corner */
+  #hud { display: none; position: fixed; top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); z-index: 3;
+    font: 600 11px ui-monospace, monospace; color: #fbf8f1; background: rgba(43, 43, 46, .72); padding: 5px 8px; border-radius: 6px; pointer-events: none; }
+  #hud.on { display: block; }
   @media (prefers-reduced-motion: reduce) { .screen, .screen.gone, .bar i { transition: none; } }
 </style>
 </head>
 <body>
 <canvas id="lelelilo" tabindex="0" aria-label="Lelelilo HQ"></canvas>
+<div id="hud" aria-hidden="true"></div>
 
 <div class="screen" id="loading" role="status" aria-live="polite">
   <img class="title" src="favicon.svg" alt="">
@@ -74,7 +79,7 @@
 
 <script type="module">
   // `cargo xtask web` writes the build's id here, so a browser fetches the new game after each build
-  const BUILD = 'df3e041';
+  const BUILD = '9b0866a';
   window.__lelelilo_build = BUILD;
   const $ = id => document.getElementById(id);
   const show = id => { for (const s of ['loading', 'unsupported', 'failed']) $(s).classList.toggle('hidden', s !== id); };
