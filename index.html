@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#f7f3e8">
+<meta name="description" content="Lelelilo HQ: An office of pillow agents at work.">
+<meta name="author" content="lelelilo.com">
+<title>Lelelilo HQ</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<style>
+  :root { --paper: #f7f3e8; --graphite: #33333b; --faint: #6b6864; --red: #d8605a; }
+  html, body { margin: 0; height: 100%; background: var(--paper); color: var(--graphite); overflow: hidden; overscroll-behavior: none; }
+  body { font: 500 16px ui-rounded, 'Segoe UI', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+  canvas#lelelilo { position: fixed; inset: 0; width: 100vw; height: 100dvh; display: block; touch-action: none; outline: none; }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; box-sizing: border-box;
+    padding: max(24px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+    background: var(--paper); text-align: center; transition: opacity .5s ease; z-index: 2; }
+  .screen.gone { opacity: 0; pointer-events: none; visibility: hidden; transition: opacity .5s ease, visibility 0s .5s; }
+  .screen.hidden { display: none; }
+  .title { width: min(132px, 34vw); height: auto; }
+  h1 { margin: 0; font-size: clamp(22px, 5vw, 30px); font-weight: 700; letter-spacing: .02em; }
+  p { margin: 0; max-width: 32em; line-height: 1.5; color: var(--faint); user-select: text; -webkit-user-select: text; }
+  /* Loading: a line drawn across as the game arrives */
+  .bar { width: min(300px, 70vw); height: 3px; background: color-mix(in srgb, var(--graphite) 14%, transparent); border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--graphite); transition: width .25s ease; }
+  .status { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  .browsers { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 30em; }
+  .browsers a { color: var(--graphite); text-decoration: none; padding: 12px 16px; border-radius: 4px; border: 1.5px solid var(--graphite); font-weight: 700; }
+  .err { font: 500 13px ui-monospace, monospace; color: var(--red); white-space: pre-wrap; max-width: min(90vw, 900px); max-height: 40vh; overflow: auto; text-align: left; padding: 12px 14px; border: 1.5px dashed var(--red); user-select: text; -webkit-user-select: text; }
+  .help { max-width: 32em; text-align: left; padding: 12px 16px; border: 1.5px dashed var(--faint); font-size: 14px; line-height: 1.5; }
+  .help.hidden { display: none; }
+  .help ol { margin: 6px 0 0; padding-left: 20px; }
+  code { font: 600 13px ui-monospace, monospace; }
+  /* The studio's page, at the foot of the loader's screens */
+  .studio { position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); padding: 14px 16px;
+    font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--graphite); text-decoration: none; }
+  .studio span { color: var(--red); }
+  .studio:hover { text-decoration: underline; }
+  @media (prefers-reduced-motion: reduce) { .screen, .screen.gone, .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<canvas id="lelelilo" tabindex="0" aria-label="Lelelilo HQ"></canvas>
+
+<div class="screen" id="loading" role="status" aria-live="polite">
+  <img class="title" src="favicon.svg" alt="">
+  <h1>Lelelilo HQ</h1>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="status" id="status">Loading…</div>
+  <a class="studio" href="https://lelelilo.com/?ref=lelelilo-hq" target="_blank" rel="noopener">lelelilo<span>.com</span></a>
+</div>
+
+<div class="screen hidden" id="unsupported">
+  <h1>This browser can't open the game</h1>
+  <p>Lelelilo HQ needs <b>WebGPU</b>, which this browser doesn't offer yet. It works in these:</p>
+  <div class="browsers">
+    <a href="https://www.google.com/chrome/" rel="noopener">Chrome · desktop &amp; Android</a>
+    <a href="https://www.microsoft.com/edge" rel="noopener">Edge</a>
+    <a href="https://www.apple.com/safari/" rel="noopener">Safari 26+ · Mac, iPhone, iPad</a>
+  </div>
+  <div class="help hidden" id="linux-help"></div>
+  <p id="why" style="font-size:13px"></p>
+  <a class="studio" href="https://lelelilo.com/?ref=lelelilo-hq" target="_blank" rel="noopener">lelelilo<span>.com</span></a>
+</div>
+
+<div class="screen hidden" id="failed">
+  <h1>The game could not start</h1>
+  <p>Something went wrong while starting the game. Starting it again usually helps.</p>
+  <div class="browsers"><a href="." id="again">Try again</a></div>
+  <div class="err" id="errtext"></div>
+  <a class="studio" href="https://lelelilo.com/?ref=lelelilo-hq" target="_blank" rel="noopener">lelelilo<span>.com</span></a>
+</div>
+
+<script type="module">
+  // `cargo xtask web` writes the build's id here, so a browser fetches the new game after each build
+  const BUILD = 'df3e041';
+  window.__lelelilo_build = BUILD;
+  const $ = id => document.getElementById(id);
+  const show = id => { for (const s of ['loading', 'unsupported', 'failed']) $(s).classList.toggle('hidden', s !== id); };
+  const setProgress = k => { $('bar').style.width = `${Math.max(0, Math.min(1, k)) * 100}%`; };
+  const fail = e => { console.error(e); $('errtext').textContent = String(e && e.message || e); show('failed'); };
+  $('again').addEventListener('click', e => { e.preventDefault(); location.reload(); });
+  const LINUX = /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
+  // On Linux, browsers keep WebGPU switched off for now: say how to switch it on
+  const linuxHelp = () => `<b>On Linux</b>, WebGPU is still switched off by default. In Chrome, Chromium, Brave or Edge:
+    <ol><li>Open <code>chrome://flags</code> and set <b>Unsafe WebGPU Support</b> to Enabled,</li>
+    <li><b>Vulkan</b> to Enabled,</li><li><b>Preferred Ozone platform</b> to X11,</li><li>then relaunch the browser.</li></ol>`;
+
+  // WebGPU or nothing: there is no WebGL version of the game to fall back to
+  async function hasWebGPU() {
+    if (!navigator.gpu) return 'This browser has no WebGPU.';
+    try { const a = await navigator.gpu.requestAdapter(); return a ? null : 'WebGPU is present but found no usable graphics adapter.'; }
+    catch (e) { return 'WebGPU could not start: ' + e.message; }
+  }
+
+  // Download the game with progress (the line is drawn as the bytes arrive)
+  async function fetchWasm(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Could not download the game (${res.status})`);
+    const total = +res.headers.get('content-length') || 0, reader = res.body.getReader(), parts = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read(); if (done) break;
+      parts.push(value); got += value.length;
+      setProgress(total ? got / total * 0.9 : Math.min(0.9, got / 2e6));
+    }
+    return new Response(new Blob(parts), { headers: { 'Content-Type': 'application/wasm' } });
+  }
+
+  (async () => {
+    const why = await hasWebGPU();
+    if (why) {
+      $('why').textContent = why;
+      if (LINUX) { $('linux-help').innerHTML = linuxHelp(); $('linux-help').classList.remove('hidden'); }
+      show('unsupported'); return;
+    }
+    try {
+      // The game says when its first frame is up, or that it could not start
+      addEventListener('lelelilo-error', e => fail(e.detail));
+      addEventListener('lelelilo-ready', () => {
+        setProgress(1); $('status').textContent = 'Ready';
+        setTimeout(() => $('loading').classList.add('gone'), 200);
+        $('lelelilo').focus();
+      }, { once: true });
+      const [{ default: init }, wasm] = await Promise.all([import(`./pkg/hq.js?v=${BUILD}`), fetchWasm(`./pkg/hq_bg.wasm?v=${BUILD}`)]);
+      $('status').textContent = 'Starting…';
+      await init({ module_or_path: wasm });
+    } catch (e) { fail(e); }
+  })();
+</script>
+</body>
+</html>
