@@ -6,7 +6,8 @@
 //   tags(numbers)  every frame: five numbers a person, in the roster's order: x, y (the point over its head) and
 //                  its height on screen, in CSS pixels; status (0 working, 1 waiting for you, 2 idle, 3 not here);
 //                  flags (1 pointed at, 2 picked)
-//   card(json)     the picked one's card, a few times a second; null closes it
+//   card(json)     the picked one's card, a few times a second; null closes it (a thing's or a room's card has
+//                  kind "thing": name, role, rows of [label, text], people as [name, what they do, number])
 //   live(json)     when the office shows the real agents: { ok, sessions, shown } every few seconds
 // and is told back, by a `hq-ui` event: `deselect`, or `select:<n>`.
 
@@ -33,6 +34,7 @@ function roster(json) {
     el.className = 'nametag' + (p.owner ? ' owner' : '');
     el.style.setProperty('--c', p.color);
     el.innerHTML = `<i class="dot"></i><span>${esc(p.name)}</span>`;
+    el._was = {};
     layer.appendChild(el);
     return el;
   });
@@ -45,10 +47,14 @@ function tags(v) {
     // (tags fade out as everyone gets small; the picked and the pointed-at keep theirs)
     const keep = flags !== 0;
     const k = status === 3 ? 0 : keep ? 1 : Math.max(0, Math.min(1, (tall - 18) / 12));
-    if (k <= 0.01) { if (el.style.opacity !== '0') el.style.opacity = '0'; continue; }
-    el.style.opacity = k.toFixed(2);
-    el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
-    el.style.zIndex = String(Math.round(y) + (flags & 2 ? 10000 : 0));
+    // (only what changed is written: the page lays out again for every write)
+    const was = el._was;
+    if (k <= 0.01) { if (was.o !== '0') el.style.opacity = was.o = '0'; continue; }
+    const op = k.toFixed(2), tr = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, -100%)`;
+    const zi = String(Math.round(y) + (flags & 2 ? 10000 : 0));
+    if (was.o !== op) el.style.opacity = was.o = op;
+    if (was.t !== tr) el.style.transform = was.t = tr;
+    if (was.z !== zi) el.style.zIndex = was.z = zi;
     const cls = 'nametag' + (people[i]?.owner ? ' owner' : '') + (status === 1 ? ' waiting' : status === 2 ? ' idle' : '')
       + (flags & 1 ? ' hovered' : '') + (flags & 2 ? ' picked' : '');
     if (el.className !== cls) el.className = cls;
@@ -96,7 +102,37 @@ function ownerCard(c) {
     <p class="care">Everyone here works for you. When one of them needs you, they queue at your desk with a paper.</p>`;
 }
 
+function thingCard(c) {
+  const people = c.people.length
+    ? `<ul class="asks people">${c.people.map(([name, line, who]) =>
+        `<li><button type="button" data-who="${who}">${esc(name)}</button> ${esc(line)}</li>`).join('')}</ul>` : '';
+  return `
+    <h2 id="card-name">${esc(c.name)}</h2>
+    <p class="who">${esc(c.role)}</p>
+    <dl>
+      ${c.rows.map(([label, text]) => row(esc(label), esc(text))).join('')}
+      ${row('People', people)}
+    </dl>
+    ${c.care ? `<p class="care">${esc(c.care)}</p>` : ''}`;
+}
+
+// (the card is not rebuilt under a press, or while one of its buttons has the keyboard: the click or the focus
+// would be lost; it catches up when the press ends or the focus leaves)
+let pressing = false, waiting = null;
+card.addEventListener('pointerdown', () => { pressing = true; });
+const settle = () => {
+  pressing = false;
+  if (waiting !== null && !card.contains(document.activeElement)) { const j = waiting; waiting = null; showCard(j); }
+};
+addEventListener('pointerup', () => setTimeout(settle, 0));
+addEventListener('pointercancel', settle);
+card.addEventListener('focusout', () => setTimeout(settle, 0));
+
 function showCard(json) {
+  if (json && openWho !== null && (pressing || card.contains(document.activeElement)) && json !== shownCard) {
+    try { if (JSON.parse(json).who === openWho) { waiting = json; return; } } catch (e) { /* shown as it comes */ }
+  }
+  waiting = null;
   if (!json) {
     if (openWho !== null) { card.classList.remove('open'); document.body.classList.remove('carded'); openWho = null; shownCard = ''; }
     return;
@@ -110,7 +146,8 @@ function showCard(json) {
   const scroll = body.scrollTop;
   card.style.setProperty('--c', c.color);
   card.classList.toggle('owner', !!c.owner);
-  body.innerHTML = c.owner ? ownerCard(c) : employeeCard(c);
+  card.classList.toggle('thing', c.kind === 'thing');
+  body.innerHTML = c.owner ? ownerCard(c) : c.kind === 'thing' ? thingCard(c) : employeeCard(c);
   if (fresh) {
     body.scrollTop = 0;
     card.classList.remove('open');
