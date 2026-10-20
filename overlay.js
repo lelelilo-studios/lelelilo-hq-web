@@ -7,6 +7,7 @@
 //                  its height on screen, in CSS pixels; status (0 working, 1 waiting for you, 2 idle, 3 not here);
 //                  flags (1 pointed at, 2 picked)
 //   card(json)     the picked one's card, a few times a second; null closes it
+//   live(json)     when the office shows the real agents: { ok, sessions, shown } every few seconds
 // and is told back, by a `hq-ui` event: `deselect`, or `select:<n>`.
 
 const ui = what => dispatchEvent(new CustomEvent('hq-ui', { detail: what }));
@@ -71,8 +72,9 @@ function employeeCard(c) {
     <dl>
       ${row('Now', now)}
       ${row('Task', c.task ? esc(c.task) : '<span class="none">none just now</span>')}
+      ${row('Session', !c.task && c.session ? esc(c.session) : '')}
       ${row('Helpers', helpers)}
-      ${row('Folder', `<code>${esc(c.folder)}</code>`)}
+      ${row('Folder', c.folder ? `<code>${esc(c.folder)}</code>${c.agent ? ` · ${esc(c.agent)}` : ''}` : '')}
       ${row('Lately', lately)}
     </dl>
     <p class="care">${esc(c.fabric)} · ${esc(c.personality.toLowerCase())} · do not remove this label</p>`;
@@ -89,6 +91,7 @@ function ownerCard(c) {
     <dl>
       ${row('Waiting', waiting)}
       ${row('Stamped', `${c.approved} paper${c.approved === 1 ? '' : 's'} so far`)}
+      ${row('Live', c.live ? esc(c.live) : '')}
     </dl>
     <p class="care">Everyone here works for you. When one of them needs you, they queue at your desk with a paper.</p>`;
 }
@@ -126,4 +129,21 @@ card.addEventListener('click', e => {
   if (b) ui('select:' + b.dataset.who);
 });
 
-window.hqOverlay = { roster, tags, card: showCard };
+// live: the tab in the corner (it opens Lumina's card, which says more)
+const liveEl = document.getElementById('live');
+function live(json) {
+  const l = JSON.parse(json);
+  const word = !l.ok ? 'PC-health is not answering'
+    : l.sessions === 0 ? 'nobody at work' : l.sessions === 1 ? '1 agent' : `${l.sessions} agents`;
+  const text = `Live · ${word}`;
+  const cls = !l.ok ? 'lost' : l.sessions === 0 ? 'quiet' : '';
+  liveEl.hidden = false;
+  if (liveEl.lastChild.textContent !== text) liveEl.lastChild.textContent = text;
+  if (liveEl.className !== cls) liveEl.className = cls;
+}
+liveEl.addEventListener('click', () => {
+  const owner = people.findIndex(p => p.owner);
+  if (owner >= 0) ui('select:' + owner);
+});
+
+window.hqOverlay = { roster, tags, card: showCard, live };
