@@ -191,8 +191,8 @@
 </div>
 
 <div class="screen hidden" id="failed">
-  <h1>The game could not start</h1>
-  <p>Something went wrong while starting the game. Starting it again usually helps.</p>
+  <h1 id="failed-title">The game could not start</h1>
+  <p id="failed-text">Something went wrong while starting the game. Starting it again usually helps.</p>
   <div class="browsers"><a href="." id="again">Try again</a></div>
   <div class="err" id="errtext"></div>
   <a class="studio" href="https://lelelilo.com/?ref=lelelilo-hq" target="_blank" rel="noopener">lelelilo<span>.com</span></a>
@@ -200,12 +200,22 @@
 
 <script type="module">
   // `cargo xtask web` writes the build's id here, so a browser fetches the new game after each build
-  const BUILD = '6ef7fde';
+  const BUILD = '88c9c67';
   window.__lelelilo_build = BUILD;
   const $ = id => document.getElementById(id);
   const show = id => { for (const s of ['loading', 'unsupported', 'failed']) $(s).classList.toggle('hidden', s !== id); };
   const setProgress = k => { $('bar').style.width = `${Math.max(0, Math.min(1, k)) * 100}%`; };
-  const fail = e => { console.error(e); $('errtext').textContent = String(e && e.message || e); show('failed'); };
+  let started = false;
+  const fail = e => {
+    console.error(e);
+    // (once it has been running, it did not fail to start: it stopped)
+    if (started) {
+      $('failed-title').textContent = 'The game stopped';
+      $('failed-text').textContent = 'Something went wrong while the office was running. Starting it again usually helps.';
+    }
+    $('errtext').textContent = String(e && e.message || e);
+    show('failed');
+  };
   $('again').addEventListener('click', e => { e.preventDefault(); location.reload(); });
   // the camera's buttons tell the game what they want
   for (const b of document.querySelectorAll('#controls button:not(.sound)'))
@@ -275,6 +285,7 @@
       // The game says when its first frame is up, or that it could not start
       addEventListener('lelelilo-error', e => fail(e.detail));
       addEventListener('lelelilo-ready', () => {
+        started = true;
         setProgress(1); $('status').textContent = 'Ready';
         $('controls').classList.add('on');
         setTimeout(() => $('loading').classList.add('gone'), 200);
