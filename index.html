@@ -4,10 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#f7f3e8">
-<meta name="description" content="Lelelilo HQ: An office of pillow agents at work.">
+<meta name="description" content="Lelelilo HQ: an office of pillow agents at work. AI agents drawn as lelelilos type, read, run builds, queue at your desk when they need you, and take coffee breaks.">
 <meta name="author" content="lelelilo.com">
 <title>Lelelilo HQ</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Lelelilo HQ">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="lelelilo.com">
+<meta property="og:title" content="Lelelilo HQ">
+<meta property="og:description" content="An office of pillow agents at work.">
+<meta property="og:url" content="https://lelelilo-studios.github.io/lelelilo-hq-web/">
+<meta property="og:image" content="https://lelelilo-studios.github.io/lelelilo-hq-web/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="An isometric cosy office at golden hour, with pillow characters at their desks, in a meeting and at the boss's desk.">
+<meta name="twitter:card" content="summary_large_image">
 <style>
   /* Nunito, as lelelilo.com sets its Tag (SIL OFL: fonts/OFL.txt) */
   @font-face { font-family: 'Nunito'; font-style: normal; font-weight: 200 1000; font-display: swap; src: url('fonts/nunito.woff2') format('woff2'); }
@@ -170,7 +183,7 @@
 
 <script type="module">
   // `cargo xtask web` writes the build's id here, so a browser fetches the new game after each build
-  const BUILD = '8c10866';
+  const BUILD = '8102387';
   window.__lelelilo_build = BUILD;
   const $ = id => document.getElementById(id);
   const show = id => { for (const s of ['loading', 'unsupported', 'failed']) $(s).classList.toggle('hidden', s !== id); };

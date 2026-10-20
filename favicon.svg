@@ -1,5 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<rect x="16" y="16" width="480" height="480" rx="96" fill="#f7f3e8"/>
-<rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="#33333b" stroke-opacity="0.18" stroke-width="4"/>
-<rect x="176" y="176" width="160" height="160" rx="10" fill="#33333b"/>
+  <defs>
+    <radialGradient id="felt" cx="44%" cy="38%" r="70%">
+      <stop offset="0" stop-color="#fbf1df"/>
+      <stop offset="0.7" stop-color="#f1e1c4"/>
+      <stop offset="1" stop-color="#e2cca6"/>
+    </radialGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9c8e0"/>
+      <stop offset="1" stop-color="#d9e6ee"/>
+    </linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="104" fill="url(#sky)"/>
+  <!-- a soft shadow under the pillow -->
+  <ellipse cx="256" cy="430" rx="140" ry="18" fill="#33333b" opacity="0.12"/>
+  <!-- the lelelilo: a pillow with pinched corners, its seam stitched round -->
+  <path d="M112 122 Q256 92 400 122 Q428 262 400 402 Q256 430 112 402 Q84 262 112 122 Z" fill="url(#felt)" stroke="#d2b88e" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M133 143 Q256 118 379 143 Q402 262 379 381 Q256 404 133 381 Q110 262 133 143 Z" fill="none" stroke="#b8946a" stroke-width="5" stroke-dasharray="13 11" stroke-linecap="round" opacity="0.75"/>
+  <!-- blush, eyes with their glints, a small smile -->
+  <ellipse cx="172" cy="300" rx="27" ry="14" fill="#f0a39b" opacity="0.65"/>
+  <ellipse cx="340" cy="300" rx="27" ry="14" fill="#f0a39b" opacity="0.65"/>
+  <ellipse cx="208" cy="262" rx="15" ry="19" fill="#2b2522"/>
+  <ellipse cx="304" cy="262" rx="15" ry="19" fill="#2b2522"/>
+  <circle cx="203" cy="255" r="5.5" fill="#fff"/>
+  <circle cx="299" cy="255" r="5.5" fill="#fff"/>
+  <path d="M238 300 Q256 316 274 300" fill="none" stroke="#2b2522" stroke-width="7" stroke-linecap="round"/>
 </svg>
