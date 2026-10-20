@@ -50,6 +50,10 @@
   #controls button:focus-visible { outline: 2px solid #4f7f99; outline-offset: 2px; }
   #controls svg { width: 22px; height: 22px; }
   @media (hover: hover) and (pointer: fine) { #controls .zoom { display: none; } }
+  /* the sound's button: a speaker, crossed out while it is off (as it is to begin with) */
+  #controls .sound svg.on, #controls .sound.on svg.off { display: none; }
+  #controls .sound.on svg.on { display: block; }
+  #controls .sound.on { color: #4f7f99; }
   /* `?hud`: what each frame costs, in the corner */
   #hud { display: none; position: fixed; top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); z-index: 3;
     font: 600 11px ui-monospace, monospace; color: #fbf8f1; background: rgba(43, 43, 46, .72); padding: 5px 8px; border-radius: 6px; pointer-events: none; }
@@ -127,7 +131,8 @@
   <button class="close" type="button" aria-label="Close the card" title="Close (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   <div class="body"></div>
 </aside>
-<nav id="controls" aria-label="Camera">
+<nav id="controls" aria-label="Camera and sound">
+  <button class="sound" data-ui="sound" aria-pressed="false" aria-label="Sound" title="Sound (M)"><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
   <button data-ui="turn-left" aria-label="Turn the office left" title="Turn left (Q)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4.5h4.5"/></svg></button>
   <button data-ui="turn-right" aria-label="Turn the office right" title="Turn right (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v4.5h-4.5"/></svg></button>
   <button class="zoom" data-ui="zoom-out" aria-label="Further away">−</button>
@@ -165,7 +170,7 @@
 
 <script type="module">
   // `cargo xtask web` writes the build's id here, so a browser fetches the new game after each build
-  const BUILD = '8d0a9ed';
+  const BUILD = '8c10866';
   window.__lelelilo_build = BUILD;
   const $ = id => document.getElementById(id);
   const show = id => { for (const s of ['loading', 'unsupported', 'failed']) $(s).classList.toggle('hidden', s !== id); };
@@ -173,8 +178,35 @@
   const fail = e => { console.error(e); $('errtext').textContent = String(e && e.message || e); show('failed'); };
   $('again').addEventListener('click', e => { e.preventDefault(); location.reload(); });
   // the camera's buttons tell the game what they want
-  for (const b of document.querySelectorAll('#controls button'))
+  for (const b of document.querySelectorAll('#controls button:not(.sound)'))
     b.addEventListener('click', () => dispatchEvent(new CustomEvent('hq-ui', { detail: b.dataset.ui })));
+  // the sound: off to begin with, then as the viewer left it; the game starts it in this very click (browsers only
+  // let sound start in one), resumes it at the first touch or key, and pauses it while the page is hidden
+  const soundButton = document.querySelector('#controls .sound');
+  let soundOn = false;
+  try { soundOn = localStorage.getItem('hq-sound') === 'on'; } catch (_) {}
+  const showSound = () => {
+    soundButton.classList.toggle('on', soundOn);
+    soundButton.setAttribute('aria-pressed', String(soundOn));
+    soundButton.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
+  };
+  showSound();
+  soundButton.addEventListener('click', () => {
+    soundOn = !soundOn;
+    showSound();
+    dispatchEvent(new CustomEvent('hq-ui', { detail: soundOn ? 'sound-on' : 'sound-off' }));
+  });
+  addEventListener('keydown', e => {
+    if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.target.closest?.('input, textarea')) soundButton.click();
+  });
+  const wake = () => { const a = window.__hq_audio; if (soundOn && a && a.state === 'suspended' && !document.hidden) a.resume(); };
+  addEventListener('pointerdown', wake, true);
+  addEventListener('keydown', wake, true);
+  document.addEventListener('visibilitychange', () => {
+    const a = window.__hq_audio;
+    if (!a) return;
+    if (document.hidden) a.suspend(); else wake();
+  });
   const LINUX = /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
   // On Linux, browsers keep WebGPU switched off for now: say how to switch it on
   const linuxHelp = () => `<b>On Linux</b>, WebGPU is still switched off by default. In Chrome, Chromium, Brave or Edge:
