@@ -1,10 +1,11 @@
 // Lelelilo HQ: the office's sound, on the browser's audio thread. The synthesizer is a small WebAssembly module of
-// its own (audio.wasm, which imports nothing); the game sends it commands as bytes through the port.
+// its own (audio.wasm, which imports nothing); the game sends it commands as bytes through the port, and the page
+// sends the recordings it has decoded, a piece at a time, answering each so the next can come.
 class HqAudio extends AudioWorkletProcessor {
   constructor(options) {
     super();
     // (if the synthesizer could not be started, what the game sends is dropped: the office goes on in silence)
-    this.port.onmessage = e => { if (this.w) this.send(e.data); };
+    this.port.onmessage = e => { if (this.w) this.take(e.data); };
     try {
       // Compiling here, off the page's main thread, is allowed synchronously
       const module = new WebAssembly.Module(options.processorOptions.wasm);
@@ -13,6 +14,18 @@ class HqAudio extends AudioWorkletProcessor {
       this.w = w;
     } catch (e) {
       this.port.postMessage({ error: String(e) });
+    }
+  }
+  take(data) {
+    if (data instanceof Uint8Array || data instanceof ArrayBuffer) return this.send(data);
+    const w = this.w;
+    if (data && data.pcm) {
+      // a piece of a sheet: into the synthesizer's own memory, then kept (or refused)
+      const { sheet, at, pcm } = data, p = w.pcm(sheet, at, pcm.length);
+      const kept = p ? (new Float32Array(w.memory.buffer, p, pcm.length).set(pcm), w.store(sheet, at, pcm.length)) : 0;
+      this.port.postMessage({ stored: sheet, at, kept });
+    } else if (data && data.ask) {
+      this.port.postMessage({ ready: w.ready(), played: w.played() });
     }
   }
   send(data) {

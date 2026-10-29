@@ -49,6 +49,7 @@
   .help.hidden { display: none; }
   .help ol { margin: 6px 0 0; padding-left: 20px; }
   code { font: 600 13px ui-monospace, monospace; }
+  #unsupported-text a { color: var(--graphite); font-weight: 700; }
   /* The studio's page, at the foot of the loader's screens */
   .studio { position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); padding: 14px 16px;
     font-size: 13px; font-weight: 700; letter-spacing: .08em; color: var(--graphite); text-decoration: none; }
@@ -69,6 +70,21 @@
   #controls .sound svg.on, #controls .sound.on svg.off { display: none; }
   #controls .sound.on svg.on { display: block; }
   #controls .sound.on { color: #4f7f99; }
+  /* the view's button: the office as pixel art, or in 3D again (only the 3D office turns) */
+  #controls .style svg.cube, #controls .style.on svg.grid { display: none; }
+  #controls .style.on svg.cube { display: block; }
+  #controls.pixel [data-ui^="turn-"] { display: none; }
+  canvas#lelelilo.pixel { image-rendering: pixelated; }
+  /* the mix (only with the sound on): music, voices and the office's own sounds, each on a felt slider */
+  #controls .mix { display: none; }
+  #controls.sounding .mix { display: grid; }
+  #controls .mix[aria-expanded="true"] { color: #4f7f99; }
+  #mixer { position: fixed; z-index: 4; right: max(14px, env(safe-area-inset-right)); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 58px);
+    width: 232px; padding: 14px 16px 10px; border-radius: 18px; background: rgba(251, 248, 241, .96); color: #33333b;
+    box-shadow: 0 4px 18px rgba(43, 43, 46, .2), inset 0 0 0 1.5px rgba(51, 51, 59, .12); font: 700 12.5px/1 var(--round); }
+  #mixer[hidden] { display: none; }
+  #mixer label { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: 10px; margin: 0 0 8px; }
+  #mixer input { width: 100%; accent-color: #4f7f99; touch-action: manipulation; }
   /* live: a felt tab in the corner saying the office shows the real agents (and when PC-health is not answering) */
   #live { position: fixed; z-index: 3; left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
     display: flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px 0 12px; border: none; border-radius: 17px;
@@ -97,6 +113,10 @@
   .nametag.hovered { scale: 1.1; }
   .nametag.picked { scale: 1.12; background: var(--c); color: #fbf8f1; outline-color: rgba(251, 248, 241, .65); box-shadow: 0 2px 8px rgba(43, 38, 32, .3); }
   .nametag.picked .dot { background: #fbf8f1; }
+  /* saying something (and heard): a little note beside the name, rising softly */
+  .nametag::after { content: '♪'; width: 0; overflow: hidden; opacity: 0; font-size: .9em; transform: translateY(2px);
+    transition: opacity .25s ease, transform .4s ease, width .25s ease; }
+  .nametag.speaking::after { width: .7em; opacity: .75; transform: translateY(-1px); }
   @keyframes ask { 0% { box-shadow: 0 0 0 0 rgba(242, 162, 42, .7); } 80%, 100% { box-shadow: 0 0 0 6px rgba(242, 162, 42, 0); } }
   /* the card of the one picked: a pillow's law label in cream cotton, hung from a brass grommet */
   #card { position: fixed; z-index: 4; right: max(16px, env(safe-area-inset-right)); top: max(16px, env(safe-area-inset-top)); width: 340px;
@@ -161,13 +181,21 @@
   <div class="body"></div>
 </aside>
 <button id="live" type="button" hidden title="The office shows the agents at work in the company's folder, as PC-health sees them"><i></i><span>Live</span></button>
-<nav id="controls" aria-label="Camera and sound">
+<nav id="controls" aria-label="Camera, view and sound">
+  <button class="mix" type="button" aria-label="The mix: music, voices, the office" aria-expanded="false" aria-controls="mixer" title="Mix"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 7h9M18 7h1M5 12h3M12 12h7M5 17h7M16 17h3"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="14" cy="17" r="2"/></svg></button>
   <button class="sound" data-ui="sound" aria-pressed="false" aria-label="Sound" title="Sound (M)"><svg class="off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></svg><svg class="on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
+  <button class="style" type="button" aria-pressed="false" aria-label="Pixel view" title="Pixel view (P)"><svg class="grid" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4h5v5H4zM9.5 9.5h5v5h-5zM15 4h5v5h-5zM4 15h5v5H4zM15 15h5v5h-5z"/></svg><svg class="cube" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9"/></svg></button>
   <button data-ui="turn-left" aria-label="Turn the office left" title="Turn left (Q)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v4.5h4.5"/></svg></button>
   <button data-ui="turn-right" aria-label="Turn the office right" title="Turn right (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.5-5.8"/><path d="M20 4v4.5h-4.5"/></svg></button>
   <button class="zoom" data-ui="zoom-out" aria-label="Further away">−</button>
   <button class="zoom" data-ui="zoom-in" aria-label="Closer">+</button>
 </nav>
+
+<div id="mixer" role="group" aria-label="The mix" hidden>
+  <label>Music <input type="range" min="0" max="1" step="0.05" data-mix="0"></label>
+  <label>Voices <input type="range" min="0" max="1" step="0.05" data-mix="1"></label>
+  <label>Office <input type="range" min="0" max="1" step="0.05" data-mix="2"></label>
+</div>
 
 <div class="screen" id="loading" role="status" aria-live="polite">
   <img class="title" src="favicon.svg" alt="">
@@ -178,9 +206,9 @@
 </div>
 
 <div class="screen hidden" id="unsupported">
-  <h1>This browser can't open the game</h1>
-  <p>Lelelilo HQ needs <b>WebGPU</b>, which this browser doesn't offer yet. It works in these:</p>
-  <div class="browsers">
+  <h1 id="unsupported-title">This browser can't open the game</h1>
+  <p id="unsupported-text">Lelelilo HQ needs <b>WebGPU</b>, which this browser doesn't offer yet. It works in these:</p>
+  <div class="browsers" id="browsers">
     <a href="https://www.google.com/chrome/" rel="noopener">Chrome · desktop &amp; Android</a>
     <a href="https://www.microsoft.com/edge" rel="noopener">Edge</a>
     <a href="https://www.apple.com/safari/" rel="noopener">Safari 26+ · Mac, iPhone, iPad</a>
@@ -200,7 +228,7 @@
 
 <script type="module">
   // `cargo xtask web` writes the build's id here, so a browser fetches the new game after each build
-  const BUILD = '88c9c67';
+  const BUILD = '0494e95';
   window.__lelelilo_build = BUILD;
   const $ = id => document.getElementById(id);
   const show = id => { for (const s of ['loading', 'unsupported', 'failed']) $(s).classList.toggle('hidden', s !== id); };
@@ -218,26 +246,65 @@
   };
   $('again').addEventListener('click', e => { e.preventDefault(); location.reload(); });
   // the camera's buttons tell the game what they want
-  for (const b of document.querySelectorAll('#controls button:not(.sound)'))
+  for (const b of document.querySelectorAll('#controls button:not(.sound):not(.mix):not(.style)'))
     b.addEventListener('click', () => dispatchEvent(new CustomEvent('hq-ui', { detail: b.dataset.ui })));
   // the sound: off to begin with, then as the viewer left it; the game starts it in this very click (browsers only
   // let sound start in one), resumes it at the first touch or key, and pauses it while the page is hidden
   const soundButton = document.querySelector('#controls .sound');
   let soundOn = false;
   try { soundOn = localStorage.getItem('hq-sound') === 'on'; } catch (_) {}
+  const mixButton = document.querySelector('#controls .mix'), mixer = $('mixer');
+  const showMixer = open => { mixer.hidden = !open; mixButton.setAttribute('aria-expanded', String(open)); };
   const showSound = () => {
     soundButton.classList.toggle('on', soundOn);
     soundButton.setAttribute('aria-pressed', String(soundOn));
     soundButton.setAttribute('aria-label', soundOn ? 'Sound on' : 'Sound off');
+    $('controls').classList.toggle('sounding', soundOn);
+    if (!soundOn) showMixer(false);
   };
+  // the mix, as the viewer left it (music a little under, voices and the office as made)
+  let mix = [0.7, 1, 1];
+  try { const m = (localStorage.getItem('hq-mix') || '').split(',').map(Number); if (m.length === 3 && m.every(x => x >= 0 && x <= 1)) mix = m; } catch (_) {}
+  for (const input of mixer.querySelectorAll('input')) {
+    input.value = mix[input.dataset.mix];
+    input.addEventListener('input', () => {
+      mix[input.dataset.mix] = Number(input.value);
+      dispatchEvent(new CustomEvent('hq-ui', { detail: 'mix:' + mix.join(',') }));
+    });
+  }
+  mixButton.addEventListener('click', () => showMixer(mixer.hidden));
+  addEventListener('pointerdown', e => { if (!mixer.hidden && !e.target.closest('#mixer, #controls .mix')) showMixer(false); }, true);
   showSound();
   soundButton.addEventListener('click', () => {
     soundOn = !soundOn;
     showSound();
     dispatchEvent(new CustomEvent('hq-ui', { detail: soundOn ? 'sound-on' : 'sound-off' }));
   });
+  // the view: the office in 3D, or as pixel art; as the viewer left it, unless the address asks (`?style=pixel`)
+  const styleButton = document.querySelector('#controls .style');
+  let pixelView = false;
+  try { pixelView = localStorage.getItem('hq-style') === 'pixel'; } catch (_) {}
+  const askedStyle = new URLSearchParams(location.search).get('style');
+  if (askedStyle === 'pixel' || askedStyle === 'iso') pixelView = askedStyle === 'pixel';
+  const showStyle = () => {
+    styleButton.classList.toggle('on', pixelView);
+    styleButton.setAttribute('aria-pressed', String(pixelView));
+    styleButton.setAttribute('aria-label', pixelView ? 'Pixel view (on)' : 'Pixel view');
+    styleButton.title = pixelView ? 'Back to 3D (P)' : 'Pixel view (P)';
+    $('controls').classList.toggle('pixel', pixelView);
+    $('lelelilo').classList.toggle('pixel', pixelView);
+  };
+  showStyle();
+  styleButton.addEventListener('click', () => {
+    pixelView = !pixelView;
+    showStyle();
+    try { localStorage.setItem('hq-style', pixelView ? 'pixel' : 'iso'); } catch (_) {}
+    dispatchEvent(new CustomEvent('hq-ui', { detail: pixelView ? 'style:pixel' : 'style:iso' }));
+  });
   addEventListener('keydown', e => {
-    if ((e.key === 'm' || e.key === 'M') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.target.closest?.('input, textarea')) soundButton.click();
+    if (e.metaKey || e.ctrlKey || e.altKey || e.target.closest?.('input, textarea')) return;
+    if (e.key === 'm' || e.key === 'M') soundButton.click();
+    if (e.key === 'p' || e.key === 'P') styleButton.click();
   });
   const wake = () => { const a = window.__hq_audio; if (soundOn && a && a.state === 'suspended' && !document.hidden) a.resume(); };
   addEventListener('pointerdown', wake, true);
@@ -274,7 +341,23 @@
     return new Response(new Blob(parts), { headers: { 'Content-Type': 'application/wasm' } });
   }
 
+  // Browsers offer WebGPU (and the sound's worklet) only on secure pages: https, or the computer's own localhost.
+  // A plain http address on the network (http://192.168.…) has neither, in any browser: say so, not "get Chrome"
+  function insecure() {
+    const here = new URL(location.href);
+    here.hostname = 'localhost';
+    $('unsupported-title').textContent = 'Open this page from a secure address';
+    $('unsupported-text').innerHTML = `Browsers only offer <b>WebGPU</b> on <b>https</b> pages or on <b>localhost</b>,
+      and <code></code> is neither. On the computer that serves it, open <a></a> instead.
+      From another device the page needs to be served over https.`;
+    $('unsupported-text').querySelector('code').textContent = location.origin;
+    Object.assign($('unsupported-text').querySelector('a'), { href: here.href, textContent: here.href });
+    $('browsers').style.display = 'none';
+    show('unsupported');
+  }
+
   (async () => {
+    if (!isSecureContext) { insecure(); return; }
     const why = await hasWebGPU();
     if (why) {
       $('why').textContent = why;

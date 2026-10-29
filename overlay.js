@@ -45,7 +45,7 @@ function tags(v) {
     const el = tagEls[i], o = i * 5;
     const [x, y, tall, status, flags] = [v[o], v[o + 1], v[o + 2], v[o + 3], v[o + 4]];
     // (tags fade out as everyone gets small; the picked and the pointed-at keep theirs)
-    const keep = flags !== 0;
+    const keep = (flags & 3) !== 0;
     const k = status === 3 ? 0 : keep ? 1 : Math.max(0, Math.min(1, (tall - 18) / 12));
     // (only what changed is written: the page lays out again for every write)
     const was = el._was;
@@ -56,7 +56,7 @@ function tags(v) {
     if (was.t !== tr) el.style.transform = was.t = tr;
     if (was.z !== zi) el.style.zIndex = was.z = zi;
     const cls = 'nametag' + (people[i]?.owner ? ' owner' : '') + (status === 1 ? ' waiting' : status === 2 ? ' idle' : '')
-      + (flags & 1 ? ' hovered' : '') + (flags & 2 ? ' picked' : '');
+      + (flags & 1 ? ' hovered' : '') + (flags & 2 ? ' picked' : '') + (flags & 4 ? ' speaking' : '');
     if (el.className !== cls) el.className = cls;
   }
 }
